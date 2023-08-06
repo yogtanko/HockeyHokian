@@ -1,4 +1,6 @@
 
+using JetBrains.Annotations;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -6,7 +8,7 @@ public class RulePuck : MonoBehaviour
 {
     // Start is called before the first frame update
     private float puckRadius;
-    private int hitCount;
+    private float hitCount;
     public Image[] hbl,hbr,htl,htr;
     private float healthb,healtht, maxHealth;
     private float h1 = 450, h2 = 135, h3 = 190;
@@ -28,30 +30,69 @@ public class RulePuck : MonoBehaviour
         healthb = Mathf.Clamp(healthb, 0, maxHealth);
         healtht = Mathf.Clamp(healtht, 0, maxHealth);
         hitCount = Mathf.Clamp(hitCount, 0, 50);
+        if (healthb == 0)
+        {
+            Debug.LogAssertion("Player Top Win");
+            ResetGame();
+
+        }
+        else if (healtht == 0)
+        {
+            Debug.LogAssertion("Player Bottom Win");
+            ResetGame();
+        }
 
         if (gameObject.transform.position.y + puckRadius < -5.34)
         {
-            ToCenter();
-            TakeDamage(50 * Mathf.Pow(2,hitCount / 20), true);
+            //Ball go to bottom goal line P top score
+            ToLoc(new Vector2(0, -1));
+            TakeDamage(DamageCalc(hitCount), true);
+            Debuging(DamageCalc(hitCount));
             hitCount = 0;
         }
         else if (gameObject.transform.position.y + puckRadius > 5.34)
         {
-            ToCenter();
-            TakeDamage(50 * Mathf.Pow(2, hitCount / 20), false);
+            //Ball go to top goal line P bottom score
+            ToLoc(new Vector2(0, 1));
+            TakeDamage(DamageCalc(hitCount), false);
+            Debuging(DamageCalc(hitCount));
             hitCount = 0;
         }
         UpdateHealthUI(htl,htr,healtht);
         UpdateHealthUI(hbl, hbr, healthb);
-        if (Input.GetKeyDown(KeyCode.S))
+    }
+    void ResetGame()
+    {
+        healthb = maxHealth;
+        healtht = maxHealth;
+        for(int i=0; i < 3; i++)
         {
-            Debug.Log("hit = " + hitCount);
+            hbl[i].fillAmount = 1;
+            hbr[i].fillAmount = 1;
+            htl[i].fillAmount = 1;
+            htr[i].fillAmount = 1;
         }
+        ToCenter();
+    }
+    void Debuging(float damage)
+    {
+        Debug.Log("hit = " + hitCount);
+        Debug.Log("damage = " + damage);
+
     }
     void ToCenter()
     {
         Vector2 centerPos = Camera.main.ScreenToWorldPoint(new Vector2(Screen.width / 2, Screen.height / 2));
-        gameObject.transform.position = centerPos;
+        ToLoc(centerPos);
+    }
+    float DamageCalc(float hitCount)
+    {
+        hitCount /= 10;
+        return 200 *(hitCount/(1+Mathf.Abs(hitCount)));
+    }
+    void ToLoc(Vector2 pos)
+    {
+        gameObject.transform.position = pos;
         gameObject.GetComponent<Rigidbody2D>().velocity = Vector2.zero;
         gameObject.GetComponent<Rigidbody2D>().angularVelocity = 0;
     }
@@ -116,7 +157,7 @@ public class RulePuck : MonoBehaviour
     {
         if(collision.gameObject.tag == "p1")
         {
-            if (isP1)
+            if (isP1 || hitCount==0)
             {
                 hitCount++;
                 isP1 = false;
