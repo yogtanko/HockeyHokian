@@ -7,6 +7,8 @@ TagManager:
   - goalLine
   - p1
   - p2
+  - ball
+  - item
   layers:
   - Default
   - TransparentFX

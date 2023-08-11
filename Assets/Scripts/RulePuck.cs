@@ -14,10 +14,13 @@ public class RulePuck : MonoBehaviour
     private float h1 = 450, h2 = 135, h3 = 190;
     private bool isP1;
     float lerpspeed = 2f, time;
+    private float timeRemaining = 3;
+    private GameObject item;
     void Start()
     {
         ToCenter();
         puckRadius = gameObject.GetComponent<CircleCollider2D>().radius;
+        item = GameObject.FindGameObjectWithTag("item");
         maxHealth = h1+h2+h3;
         healthb = maxHealth;
         healtht = maxHealth;
@@ -27,18 +30,28 @@ public class RulePuck : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (timeRemaining > 0)
+        {
+            timeRemaining -= Time.deltaTime;
+        }
+        else
+        {
+            item.SetActive(true);
+            item.transform.position = new Vector2(Random.Range(-2f, 2f), Random.Range(-4f, 4f));
+            timeRemaining = 3;
+        }
         healthb = Mathf.Clamp(healthb, 0, maxHealth);
         healtht = Mathf.Clamp(healtht, 0, maxHealth);
         hitCount = Mathf.Clamp(hitCount, 0, 50);
         if (healthb == 0)
         {
-            Debug.LogAssertion("Player Top Win");
+            Debug.Log("Player Top Win");            
             ResetGame();
 
         }
         else if (healtht == 0)
         {
-            Debug.LogAssertion("Player Bottom Win");
+            Debug.Log("Player Bottom Win");
             ResetGame();
         }
 
@@ -47,7 +60,7 @@ public class RulePuck : MonoBehaviour
             //Ball go to bottom goal line P top score
             ToLoc(new Vector2(0, -1));
             TakeDamage(DamageCalc(hitCount), true);
-            Debuging(DamageCalc(hitCount));
+            //Debuging(DamageCalc(hitCount));
             hitCount = 0;
         }
         else if (gameObject.transform.position.y + puckRadius > 5.34)
@@ -55,7 +68,7 @@ public class RulePuck : MonoBehaviour
             //Ball go to top goal line P bottom score
             ToLoc(new Vector2(0, 1));
             TakeDamage(DamageCalc(hitCount), false);
-            Debuging(DamageCalc(hitCount));
+            //Debuging(DamageCalc(hitCount));
             hitCount = 0;
         }
         UpdateHealthUI(htl,htr,healtht);
@@ -89,6 +102,11 @@ public class RulePuck : MonoBehaviour
     {
         hitCount /= 10;
         return 200 *(hitCount/(1+Mathf.Abs(hitCount)));
+    }
+    float HealCalc(float hitCount)
+    {
+        hitCount /= 10;
+        return 100 * (hitCount / (1 + Mathf.Abs(hitCount)));
     }
     void ToLoc(Vector2 pos)
     {
@@ -169,6 +187,15 @@ public class RulePuck : MonoBehaviour
                 hitCount++;
                 isP1 = true;
             }
+        }
+    }
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if(collision.gameObject.tag == "item")
+        {
+            item.transform.position = new Vector2(Screen.width+10, Screen.height+10);
+            item.SetActive(false);
+            RestoreHealth(HealCalc(hitCount),!isP1);
         }
     }
 }
