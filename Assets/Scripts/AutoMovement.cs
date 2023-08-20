@@ -28,8 +28,8 @@ public class AutoMovement : MonoBehaviour
         }
         else
         {
-            timeRemaining = 1;
-            offset = new Vector3(0, Random.Range(-0.1f, 0.1f));
+            timeRemaining = Random.Range(1,3);
+            offset = new Vector3(0, Random.Range(-puckRadius,puckRadius));
         }
         moveSpeed = Random.Range(10, 50);
        
