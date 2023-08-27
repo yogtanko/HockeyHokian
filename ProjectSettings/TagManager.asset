@@ -9,6 +9,7 @@ TagManager:
   - p2
   - ball
   - item
+  - health bar
   layers:
   - Default
   - TransparentFX

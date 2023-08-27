@@ -1,19 +1,16 @@
-
 using UnityEngine;
 
-
-public class Movement : MonoBehaviour
+public class IPlayerMovement : HH.Movement
 {
-    public GameObject selectedObject;
-    public GameObject thisObject;
-    Rigidbody2D rb;
-    public float moveSpeed = 100;
-    void Start()
-    {
-        rb = GetComponent<Rigidbody2D>();
-    }
 
-    void Update()
+    private Rigidbody2D rb;
+    private GameObject selectedObject,gameObject;
+    public IPlayerMovement(GameObject gameObject)
+    {
+        this.gameObject = gameObject;
+        rb = gameObject.GetComponent<Rigidbody2D>();
+    }
+    public override void MoveTo(float moveSpeed = 100)
     {
         Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         if (Input.GetMouseButtonDown(0))
@@ -23,12 +20,10 @@ public class Movement : MonoBehaviour
             {
                 selectedObject = targetObject.transform.gameObject;
             }
-            
         }
-        if (selectedObject == thisObject)
+        if (selectedObject == gameObject)
         {
-            rb.MovePosition(Vector2.MoveTowards(transform.position, mousePos, moveSpeed * Time.deltaTime));
-
+            rb.MovePosition(Vector2.MoveTowards(gameObject.transform.position, mousePos, moveSpeed * Time.deltaTime));
         }
         if (Input.GetMouseButtonUp(0) && selectedObject)
         {
@@ -36,5 +31,4 @@ public class Movement : MonoBehaviour
             rb.velocity = Vector2.zero;
         }
     }
-
 }

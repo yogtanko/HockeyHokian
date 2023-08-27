@@ -1,8 +1,9 @@
 
-using JetBrains.Annotations;
-using System.Threading;
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+
 
 public class RulePuck : MonoBehaviour
 {
@@ -10,26 +11,34 @@ public class RulePuck : MonoBehaviour
     private float puckRadius;
     private float hitCount;
     public Image[] hbl,hbr,htl,htr;
-    private float healthb,healtht, maxHealth;
-    private float h1 = 450, h2 = 135, h3 = 190;
     private bool isP1;
-    float lerpspeed = 2f, time;
+    float time;
     private float timeRemaining = 3;
     private GameObject item;
+    private Health healtht,healthb;
+    List<Action> actions = new List<Action>();
+    private float ddtime=0;
     void Start()
     {
+        healtht = new Health(450, 135, 190, htl, htr);
+        healthb = new Health(450, 135, 190, hbl, hbr);
         ToCenter();
         puckRadius = gameObject.GetComponent<CircleCollider2D>().radius;
         item = GameObject.FindGameObjectWithTag("item");
-        maxHealth = h1+h2+h3;
-        healthb = maxHealth;
-        healtht = maxHealth;
         hitCount = 0;
         isP1 = false;
+        GetActions();
     }
-    // Update is called once per frame
+    // Update is called once per frame`
     void Update()
     {
+        if (ddtime > 0) {
+            ddtime -= Time.deltaTime;
+        }
+        else
+        {
+            gameObject.GetComponent<SpriteRenderer>().color = Color.white;
+        }
         if (timeRemaining > 0)
         {
             timeRemaining -= Time.deltaTime;
@@ -37,19 +46,19 @@ public class RulePuck : MonoBehaviour
         else
         {
             item.SetActive(true);
-            item.transform.position = new Vector2(Random.Range(-2f, 2f), Random.Range(-4f, 4f));
+            item.transform.position = new Vector2(UnityEngine.Random.Range(-2f, 2f), UnityEngine.Random.Range(-4f, 4f));
             timeRemaining = 3;
         }
-        healthb = Mathf.Clamp(healthb, 0, maxHealth);
-        healtht = Mathf.Clamp(healtht, 0, maxHealth);
+        healthb.health = Mathf.Clamp(healthb.health, 0, healthb.maxHealth);
+        healtht.health = Mathf.Clamp(healtht.health, 0, healtht.maxHealth);
         hitCount = Mathf.Clamp(hitCount, 0, 50);
-        if (healthb == 0)
+        if (healthb.health == 0)
         {
             Debug.Log("Player Top Win");            
             ResetGame();
 
         }
-        else if (healtht == 0)
+        else if (healtht.health == 0)
         {
             Debug.Log("Player Bottom Win");
             ResetGame();
@@ -60,7 +69,9 @@ public class RulePuck : MonoBehaviour
             //Ball go to bottom goal line P top score
             ToLoc(new Vector2(0, -1));
             TakeDamage(DamageCalc(hitCount), true);
-            //Debuging(DamageCalc(hitCount));
+            ddtime = 0;
+            Debug.Log("Top Score");
+            Debuging(DamageCalc(hitCount));
             hitCount = 0;
         }
         else if (gameObject.transform.position.y + puckRadius > 5.34)
@@ -68,16 +79,18 @@ public class RulePuck : MonoBehaviour
             //Ball go to top goal line P bottom score
             ToLoc(new Vector2(0, 1));
             TakeDamage(DamageCalc(hitCount), false);
-            //Debuging(DamageCalc(hitCount));
+            ddtime = 0;
+            Debug.Log("Bottom Score");
+            Debuging(DamageCalc(hitCount));
             hitCount = 0;
         }
-        UpdateHealthUI(htl,htr,healtht);
-        UpdateHealthUI(hbl, hbr, healthb);
+        HH.HealthBar.UpdateHealthUI(ref healtht, ref time);
+        HH.HealthBar.UpdateHealthUI(ref healthb, ref time);
     }
     void ResetGame()
     {
-        healthb = maxHealth;
-        healtht = maxHealth;
+        healthb.health = healthb.maxHealth;
+        healtht.health = healtht.maxHealth;
         for(int i=0; i < 3; i++)
         {
             hbl[i].fillAmount = 1;
@@ -89,9 +102,12 @@ public class RulePuck : MonoBehaviour
     }
     void Debuging(float damage)
     {
-        Debug.Log("hit = " + hitCount);
-        Debug.Log("damage = " + damage);
-
+        Debug.Log("hit = " + hitCount+ " damage "+damage);
+    }
+    void GetActions()
+    {
+        actions.Add(() => Ability.RestoreHealth(HealCalc(hitCount), !isP1, ref healthb.health, ref healtht.health, ref time));
+        actions.Add(() => Ability.DoubleDamage(ref ddtime));
     }
     void ToCenter()
     {
@@ -101,7 +117,12 @@ public class RulePuck : MonoBehaviour
     float DamageCalc(float hitCount)
     {
         hitCount /= 10;
-        return 200 *(hitCount/(1+Mathf.Abs(hitCount)));
+        float damage = 200 * (hitCount / (1 + Mathf.Abs(hitCount)));
+        if (gameObject.GetComponent<SpriteRenderer>().color == Color.red)
+        {
+            damage *= 2;
+        }
+        return damage;
     }
     float HealCalc(float hitCount)
     {
@@ -115,58 +136,16 @@ public class RulePuck : MonoBehaviour
         gameObject.GetComponent<Rigidbody2D>().angularVelocity = 0;
     }
 
-    void UpdateHealthUI(Image[] left, Image[] right, float health)
-    {
-        time += Time.deltaTime;
-        float lerptime = time / lerpspeed;
-        if((health > h2 + h3 || left[0].fillAmount>0) && left[1].fillAmount==1)
-        {
-            left[1].fillAmount = 1;
-            right[1].fillAmount = 1;
-            left[0].fillAmount = Mathf.Lerp(left[0].fillAmount, (health - h2 - h3) / h1, lerptime);
-            right[0].fillAmount = Mathf.Lerp(right[0].fillAmount, (health - h2 - h3) / h1, lerptime);
-        }else if (health > h3 || left[1].fillAmount > 0 && left[2].fillAmount == 1)
-        {
-            left[2].fillAmount = 1;
-            right[2].fillAmount = 1;
-            left[1].fillAmount = Mathf.Lerp(left[1].fillAmount, (health - h3) / h2, lerptime);
-            right[1].fillAmount = Mathf.Lerp(right[1].fillAmount, (health - h3) / h2, lerptime);
-        }
-        else if(health > 0 || left[2].fillAmount > 0) 
-        {
-            left[2].fillAmount = Mathf.Lerp(left[2].fillAmount, health / h3, lerptime);
-            right[2].fillAmount = Mathf.Lerp(right[2].fillAmount, health / h3, lerptime);
-        }
-        else
-        {
-            left[2].fillAmount = Mathf.Lerp(left[2].fillAmount, 0, lerptime);
-            right[2].fillAmount = Mathf.Lerp(right[2].fillAmount, 0, lerptime);
-        }
-
-    }
     void TakeDamage(float damage, bool pb)
     {
         if (pb)
         {
-            healthb -= damage;
+            healthb.health -= damage;
             time = 0f;
         }
         else
         {
-            healtht -= damage;
-            time = 0f;
-        }
-    }
-    void RestoreHealth(float value,bool pb)
-    {
-        if (pb)
-        {
-            healthb += value;
-            time = 0f;
-        }
-        else
-        {
-            healtht += value;
+            healtht.health -= damage;
             time = 0f;
         }
     }
@@ -195,7 +174,8 @@ public class RulePuck : MonoBehaviour
         {
             item.transform.position = new Vector2(Screen.width+10, Screen.height+10);
             item.SetActive(false);
-            RestoreHealth(HealCalc(hitCount),!isP1);
+            int i = UnityEngine.Random.Range(0, actions.Count);
+            actions[i].Invoke();
         }
     }
 }
