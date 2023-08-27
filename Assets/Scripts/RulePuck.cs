@@ -70,7 +70,8 @@ public class RulePuck : MonoBehaviour
             ToLoc(new Vector2(0, -1));
             TakeDamage(DamageCalc(hitCount), true);
             ddtime = 0;
-            //Debuging(DamageCalc(hitCount));
+            Debug.Log("Top Score");
+            Debuging(DamageCalc(hitCount));
             hitCount = 0;
         }
         else if (gameObject.transform.position.y + puckRadius > 5.34)
@@ -79,7 +80,8 @@ public class RulePuck : MonoBehaviour
             ToLoc(new Vector2(0, 1));
             TakeDamage(DamageCalc(hitCount), false);
             ddtime = 0;
-            //Debuging(DamageCalc(hitCount));
+            Debug.Log("Bottom Score");
+            Debuging(DamageCalc(hitCount));
             hitCount = 0;
         }
         HH.HealthBar.UpdateHealthUI(ref healtht, ref time);
@@ -100,8 +102,7 @@ public class RulePuck : MonoBehaviour
     }
     void Debuging(float damage)
     {
-        Debug.Log("hit = " + hitCount);
-        Debug.Log("damage = " + damage);
+        Debug.Log("hit = " + hitCount+ " damage "+damage);
     }
     void GetActions()
     {
@@ -173,7 +174,7 @@ public class RulePuck : MonoBehaviour
         {
             item.transform.position = new Vector2(Screen.width+10, Screen.height+10);
             item.SetActive(false);
-            int i = UnityEngine.Random.Range(0, actions.Count-1);
+            int i = UnityEngine.Random.Range(0, actions.Count);
             actions[i].Invoke();
         }
     }
